@@ -42,7 +42,7 @@
 #let arrow-head-gap = 0.10
 
 // Settings
-#set text(font: "IBM Plex Sans")
+#set text(font: "IBM Plex Mono")
 #set text(weight: "semibold")
 #set text(fill: text-color)
 
@@ -51,6 +51,9 @@
 
 // Mention a description in text
 #let text-description(description) = text(fill: description-color)["#description"]
+
+// Freeform text, for describing operations that don't lend themselves to pictures.
+#let text-freeform(freeform) = text(style: "italic", font: "IBM Plex Sans", freeform)
 
 // Highlight a piece of text
 #let text-highlight(stuff) = highlight(
@@ -63,7 +66,7 @@
 )
 
 // Draw a box around a repo state
-#let repository(contents) = {
+#let repository(contents) = align(left, {
   rect(
     stroke: none,
     radius: 0.5em,
@@ -72,7 +75,7 @@
     fill: repository-color,
     contents
   )
-}
+})
 
 // Draw a node.
 #let change(
@@ -84,6 +87,7 @@
   description: none,
   highlighted-description: none,
   files: none,
+  highlighted-files: none,
 ) = {
   circle(
     pos(row-and-col),
@@ -115,13 +119,16 @@
     rhs.push(text(fill: description-color)[#h(0.25em) #text-highlight["#highlighted-description"]])
   }
   if files != none {
-    rhs.push($F_#files$)
+    rhs.push[#h(0.5em)_#[F#files]_]
+  }
+  if highlighted-files != none {
+    rhs.push[#h(0.5em)#text-highlight[_#[F#highlighted-files]_]]
   }
 
   if rhs.len() > 0 {
     let rhs-content = rhs.join(linebreak())
     if rhs.len() > 1 {
-      rhs-content = [#v(1.0em) #rhs-content]
+      rhs-content = [#v(0.5em) #rhs-content]
     }
     content(
       (name: change-id, anchor: 0deg),
@@ -173,107 +180,234 @@
   )
 }
 
-#let jj-bookmark-create = align(center, {
-  repository(canvas({
-    change("r", (0, 0), working: true)
-  }))
-  
-  canvas({
-    operation([jj bookmark create \ #text-bookmark("my-branch")])
-  })
-  
-  repository(canvas({
-    change("r", (0, 0), working: true, bookmark: "my-branch")
-  }))
+#let read-op(op, repo) = align(center, {
+  canvas(operation(op))
+  repository(canvas(repo))
 })
 
-#let jj-bookmark-rename = align(center, {
-  repository(canvas({
-    change("r", (0, 0), bookmark: "old-name")
-  }))
-  
-  canvas({
-    operation([jj bookmark rename \ #text-bookmark("old-name") \ #text-bookmark("new-name")])
-  })
-  
-  repository(canvas({
-    change("r", (0, 0), bookmark: "new-name")
-  }))
+#let write-op(before, op, after) = align(center, {
+  repository(canvas(before))
+  canvas(operation(op))
+  repository(canvas(after))
 })
 
-#let jj-bookmark-delete = align(center, {
-  repository(canvas({
-    change("r", (0, 0), bookmark: "my-branch")
-  }))
-
-  canvas({
-    operation([jj bookmark delete \ #text-bookmark("my-branch")])
-  })
-
-  repository(canvas({
-    change("r", (0, 0))
-  }))
+#let freeform-op(op, what-it-does) = align(center, {
+  canvas(operation(op))
+  text-freeform(what-it-does)
 })
 
-#let jj-bookmark-move = align(center, {
-  repository(canvas({
+// ~~~~
+// Info
+// ~~~~
+
+#let jj-status = freeform-op(
+  [jj status],
+  [Shows current&parent change and file modifications.]
+)
+
+#let jj-log = freeform-op(
+  [jj log -r ..],
+  [Shows all changes in the repo.]
+)
+
+// ~~~~~~~~~
+// Bookmarks
+// ~~~~~~~~~
+
+#let jj-bookmark-create = write-op(
+  change("r", (0, 0), working: true),
+  [jj bookmark create \ #text-bookmark("my-branch")],
+  change("r", (0, 0), working: true, bookmark: "my-branch")
+)
+
+#let jj-bookmark-rename = write-op(
+  change("r", (0, 0), bookmark: "old-name"),
+  [jj bookmark rename \ #text-bookmark("old-name") \ #text-bookmark("new-name")],
+  change("r", (0, 0), bookmark: "new-name")
+)
+
+#let jj-bookmark-delete = write-op(
+  change("r", (0, 0), bookmark: "my-branch"),
+  [jj bookmark delete \ #text-bookmark("my-branch")],
+  change("r", (0, 0))
+)
+
+#let jj-bookmark-move = write-op(
+  {
     change("r", (0, 0), working: true)
     ellipsis((0.5, 0))
     change("q", (1, 0), bookmark: "my-branch")
-  }))
-
-  canvas({
-    operation([jj bookmark move \ #text-bookmark("my-branch")])
-  })
-
-  repository(canvas({
+  },
+  [jj bookmark move \ #text-bookmark("my-branch")],
+  {
     change("r", (0, 0), working: true, bookmark: "my-branch")
     ellipsis((0.5, 0))
     change("q", (1, 0))
-  }))
-})
+  }
+)
 
-#let jj-bookmark-list = align(center, {
-  canvas({
-    operation([jj bookmark list])
-  })
-
-  repository(canvas({
+#let jj-bookmark-list = read-op(
+  [jj bookmark list],
+  {
     change("r", (0, 0), highlighted-bookmark: "branch-1")
     ellipsis((0.5, 0))
     change("q", (1, 0), highlighted-bookmark: "branch-2")
-  }))
-})
+  }
+)
 
-#let jj-show = align(center, {
-  canvas({
-    operation([jj show])
-  })
+// ~~~~~~~~~~~~
+// Descriptions
+// ~~~~~~~~~~~~
 
-  repository(canvas({
-    change("r", (0, 0), working: true, highlighted-description: "commit msg")
-  }))
-})
+#let jj-show = read-op(
+  [jj show],
+  change("r", (0, 0), working: true, highlighted-description: "commit msg")
+)
 
-#let jj-describe = align(center, {
-  repository(canvas({
-    change("r", (0, 0), working: true, description: "old msg")
-  }))
+#let jj-describe = write-op(
+  change("r", (0, 0), working: true, description: "old msg"),
+  [jj describe \ -m #text-description("new msg")],
+  change("r", (0, 0), working: true, description: "new msg")
+)
 
-  canvas({
-    operation([jj describe \ -m #text-description("new msg")])
-  })
+// ~~~~~
+// Graph
+// ~~~~~
 
-  repository(canvas({
-    change("r", (0, 0), working: true, description: "new msg")
-  }))
-})
+#let jj-edit = write-op(
+  {
+    change("r", (0, 0), working: true)
+    ellipsis((0.5, 0))
+    change("q", (1, 0))
+  },
+  [jj edit q],
+  {
+    change("r", (0, 0))
+    ellipsis((0.5, 0))
+    change("q", (1, 0), working: true)
+  }
+)
+
+#let jj-new = write-op(
+  change("q", (1, 0), working: true, bookmark: "my-branch", description: "commit msg"),
+  [jj new],
+  {
+    change("r", (0, 0), working: true)
+    change("q", (1, 0), bookmark: "my-branch", description: "commit msg")
+    edge("r", "q")
+  }
+)
+
+#let jj-merge = write-op(
+  {
+    change("p", (1, -1))
+    change("q", (1, 1))
+  },
+  [jj new p q],
+  {
+    change("r", (0, 0), working: true)
+    change("p", (1, -1))
+    change("q", (1, 1))
+    edge("r", "p")
+    edge("r", "q")
+  }
+)
+
+#let jj-abandon = write-op(
+  {
+    change("r", (0, 0), files: 3)
+    change("q", (1, 0), files: 2)
+    change("p", (2, 0), files: 1)
+    edge("r", "q")
+    edge("q", "p")
+  },
+  [jj abandon r],
+  {
+    change("r", (0, 0), files: 3)
+    change("p", (1, 0), files: 1)
+    edge("r", "p")
+  }
+)
+
+// ~~~~~
+// Files
+// ~~~~~
+
+#let jj-diff = read-op(
+  [jj diff \ (paths..)],
+  {
+    change("r", (0, 0), working: true, highlighted-files: 2)
+    change("q", (1, 0), highlighted-files: 1)
+    edge("r", "q")
+  }
+)
+
+#let jj-restore = write-op(
+  {
+    change("r", (0, 0), working: true, files: 2)
+    ellipsis((0.5, 0))
+    change("q", (1, 0), files: 1)
+  },
+  [jj restore \ \-\-from q \ (paths..)],
+  {
+    change("r", (0, 0), working: true, files: 1)
+    ellipsis((0.5, 0))
+    change("q", (1, 0), files: 1)
+  }
+)
+
+#let jj-squash = write-op(
+  {
+    change("r", (0, 0), working: true, files: 2)
+    change("q", (1, 0), files: 1)
+    edge("r", "q")
+  },
+  [jj squash],
+  {
+    change("r", (0, 0), working: true, files: 2)
+    change("q", (1, 0), files: 2)
+    edge("r", "q")
+  }
+)
+
+#let jj-backout = write-op(
+  {
+    change("r", (0, 0), working: true, description: "msg", files: 2)
+    change("q", (1, 0), files: 1)
+    edge("r", "q")
+  },
+  [jj backout],
+  {
+    change("s", (-1, 0), description: "Backout 'msg'", files: 1)
+    change("r", (0, 0), working: true, description: "msg", files: 2)
+    change("q", (1, 0), files: 1)
+    edge("s", "r")
+    edge("r", "q")
+  }
+)
+
+// ~~~~~~~~~~~~~
+// Miscellaneous
+// ~~~~~~~~~~~~~
+
+#let jj-undo = freeform-op(
+  [jj undo],
+  [Undoes the last command.]
+)
+
+// ~~~~~~~~~~~
+// Cheat Sheet
+// ~~~~~~~~~~~
 
 #grid(
   columns: (1fr, 1fr, 1fr, 1fr),
   column-gutter: 3em,
   row-gutter: 2em,
 )[
+  #jj-status
+][
+  #jj-log
+][
   #jj-bookmark-list
 ][
   #jj-bookmark-create
@@ -287,4 +421,22 @@
   #jj-show
 ][
   #jj-describe
+][
+  #jj-edit
+][
+  #jj-new
+][
+  #jj-merge
+][
+  #jj-diff
+][
+  #jj-restore
+][
+  #jj-squash
+][
+  #jj-backout
+][
+  #jj-abandon
+][
+  #jj-undo
 ]
