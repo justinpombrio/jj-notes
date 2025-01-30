@@ -43,8 +43,9 @@
 
 // Settings
 #set text(font: "IBM Plex Mono")
-#set text(weight: "semibold")
+#set text(weight: "bold")
 #set text(fill: text-color)
+#set text(size: 10pt)
 
 // Mention a bookmark name in text
 #let text-bookmark(bookmark-name) = text(fill: bookmark-color, bookmark-name)
@@ -53,7 +54,7 @@
 #let text-description(description) = text(fill: description-color)["#description"]
 
 // Freeform text, for describing operations that don't lend themselves to pictures.
-#let text-freeform(freeform) = text(style: "italic", font: "IBM Plex Sans", freeform)
+#let text-freeform(freeform) = text(style: "italic", weight: "regular", font: "IBM Plex Sans", freeform)
 
 // Highlight a piece of text
 #let text-highlight(stuff) = highlight(
@@ -71,7 +72,7 @@
     stroke: none,
     radius: 0.5em,
     inset: 0.75em,
-    width: 12em,
+    width: 11.75em,
     fill: repository-color,
     contents
   )
@@ -107,10 +108,10 @@
 
   let rhs = ()
   if bookmark != none {
-    rhs.push(text(fill: bookmark-color)[#h(0.25em)--- #bookmark])
+    rhs.push(text(fill: bookmark-color)[#h(0.25em)---#h(0.25em)#bookmark])
   }
   if highlighted-bookmark != none {
-    rhs.push(text(fill: bookmark-color)[#h(0.25em)--- #text-highlight(highlighted-bookmark)])
+    rhs.push(text(fill: bookmark-color)[#h(0.25em)---#h(0.25em)#text-highlight(highlighted-bookmark)])
   }
   if description != none {
     rhs.push(text(fill: description-color)[#h(0.25em) "#description"])
@@ -138,6 +139,12 @@
   }
 }
 
+// Leave a blank space at this position.
+// (Used to align nodes between different repo drawings.)
+#let blank(row-and-col) = {
+  circle(pos(row-and-col), radius: node-radius, stroke: none, fill: none)
+}
+
 // Draw an ellipsis
 #let ellipsis(row-and-col) = {
   let (x, y) = pos(row-and-col)
@@ -160,16 +167,6 @@
 
 // Draw a big labeled operation arrow.
 #let operation(label) = {
-  line(
-    (0, 0),
-    (0, -1.5),
-    // Options: "triangle", "stealth", "straight", "barbed"
-    mark: (end: "triangle"),
-    stroke: (
-      paint: operation-color,
-      thickness: 0.25em,
-    ),
-  )
   content(
     (0.5, -0.75),
     anchor: "west",
@@ -180,15 +177,31 @@
   )
 }
 
+#let operation-arrow = {
+  line(
+    (0, 0),
+    (0.75, 0),
+    mark: (end: "triangle"),
+    stroke: (
+      paint: operation-color,
+      thickness: 0.25em,
+    ),
+  )
+}
+
 #let read-op(op, repo) = align(center, {
   canvas(operation(op))
   repository(canvas(repo))
 })
 
 #let write-op(before, op, after) = align(center, {
-  repository(canvas(before))
   canvas(operation(op))
-  repository(canvas(after))
+  grid(
+    columns: (1fr, 2em, 1fr),
+    repository(canvas(before)),
+    align(horizon, canvas(operation-arrow)),
+    repository(canvas(after))
+  )
 })
 
 #let freeform-op(op, what-it-does) = align(center, {
@@ -216,19 +229,19 @@
 
 #let jj-bookmark-create = write-op(
   change("r", (0, 0), working: true),
-  [jj bookmark create \ #text-bookmark("my-branch")],
+  [jj bookmark create #text-bookmark("my-branch")],
   change("r", (0, 0), working: true, bookmark: "my-branch")
 )
 
 #let jj-bookmark-rename = write-op(
   change("r", (0, 0), bookmark: "old-name"),
-  [jj bookmark rename \ #text-bookmark("old-name") \ #text-bookmark("new-name")],
+  [jj bookmark rename #text-bookmark("old-name") #text-bookmark("new-name")],
   change("r", (0, 0), bookmark: "new-name")
 )
 
 #let jj-bookmark-delete = write-op(
   change("r", (0, 0), bookmark: "my-branch"),
-  [jj bookmark delete \ #text-bookmark("my-branch")],
+  [jj bookmark delete #text-bookmark("my-branch")],
   change("r", (0, 0))
 )
 
@@ -238,7 +251,7 @@
     ellipsis((0.5, 0))
     change("q", (1, 0), bookmark: "my-branch")
   },
-  [jj bookmark move \ #text-bookmark("my-branch")],
+  [jj bookmark move #text-bookmark("my-branch")],
   {
     change("r", (0, 0), working: true, bookmark: "my-branch")
     ellipsis((0.5, 0))
@@ -266,7 +279,7 @@
 
 #let jj-describe = write-op(
   change("r", (0, 0), working: true, description: "old msg"),
-  [jj describe \ -m #text-description("new msg")],
+  [jj describe -m #text-description("new msg")],
   change("r", (0, 0), working: true, description: "new msg")
 )
 
@@ -289,7 +302,10 @@
 )
 
 #let jj-new = write-op(
-  change("q", (1, 0), working: true, bookmark: "my-branch", description: "commit msg"),
+  {
+    blank((0, 0))
+    change("q", (1, 0), working: true, bookmark: "my-branch", description: "commit msg")
+  },
   [jj new],
   {
     change("r", (0, 0), working: true)
@@ -300,6 +316,7 @@
 
 #let jj-merge = write-op(
   {
+    blank((0, 0))
     change("p", (1, -1))
     change("q", (1, 1))
   },
@@ -321,10 +338,10 @@
     edge("r", "q")
     edge("q", "p")
   },
-  [jj abandon r],
+  [jj abandon q],
   {
     change("r", (0, 0), files: 3)
-    change("p", (1, 0), files: 1)
+    change("p", (2, 0), files: 1)
     edge("r", "p")
   }
 )
@@ -334,7 +351,7 @@
 // ~~~~~
 
 #let jj-diff = read-op(
-  [jj diff \ (paths..)],
+  [jj diff (paths..)],
   {
     change("r", (0, 0), working: true, highlighted-files: 2)
     change("q", (1, 0), highlighted-files: 1)
@@ -348,7 +365,7 @@
     ellipsis((0.5, 0))
     change("q", (1, 0), files: 1)
   },
-  [jj restore \ \-\-from q \ (paths..)],
+  [jj restore \-\-from q (paths..)],
   {
     change("r", (0, 0), working: true, files: 1)
     ellipsis((0.5, 0))
@@ -372,15 +389,16 @@
 
 #let jj-backout = write-op(
   {
-    change("r", (0, 0), working: true, description: "msg", files: 2)
-    change("q", (1, 0), files: 1)
+    blank((0, 0))
+    change("r", (1, 0), working: true, description: "msg", files: 2)
+    change("q", (2, 0), files: 1)
     edge("r", "q")
   },
   [jj backout],
   {
-    change("s", (-1, 0), description: "Backout 'msg'", files: 1)
-    change("r", (0, 0), working: true, description: "msg", files: 2)
-    change("q", (1, 0), files: 1)
+    change("s", (0, 0), description: [Backout 'msg'], files: 1)
+    change("r", (1, 0), working: true, description: "msg", files: 2)
+    change("q", (2, 0), files: 1)
     edge("s", "r")
     edge("r", "q")
   }
@@ -400,7 +418,7 @@
 // ~~~~~~~~~~~
 
 #grid(
-  columns: (1fr, 1fr, 1fr, 1fr),
+  columns: (1fr, 1fr),
   column-gutter: 3em,
   row-gutter: 2em,
 )[
