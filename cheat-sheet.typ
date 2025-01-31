@@ -279,13 +279,13 @@
 
 #let jj-bookmark-move = write-command(
   {
-    change("r", (0, 0), working: true)
-    change("q", (0, 2), bookmark: "feat/ui")
+    change("q", (0, 0), bookmark: "feat/ui")
+    change("r", (0, 5.5), working: true)
   },
   [jj bookmark move #text-bookmark("feat/ui")],
   {
-    change("r", (0, 0), working: true, bookmark: "feat/ui")
-    change("q", (0, 5))
+    change("q", (0, 0))
+    change("r", (0, 2.5), working: true, bookmark: "feat/ui")
   }
 )
 
@@ -524,4 +524,4 @@
   legend,
 )
 
-#place(bottom + right, text-attribution[justinpombrio.net \ & lark.gay])
+#place(bottom + right, text-attribution[justinpombrio.net \ & lark.gay \ Feb 2025])
