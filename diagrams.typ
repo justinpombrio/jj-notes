@@ -1,34 +1,25 @@
 #import "@preview/cetz:0.3.0": canvas, draw, tree
 #import draw: content
 
-// TODO:
-// - chevrons instead of op arrow
-// - play tetris
-
 #set page(
   "us-letter",
   margin: 0.5in,
   flipped: false,
 )
 
+// Overall scale (everything is in em)
+#set text(size: 9.5pt)
+
 // Color definitions
 #let text-color = rgb("#47423c")
-#let primary-color = rgb("#e2c093")
-#let secondary-color-1 = rgb("#7a8295")
-#let secondary-color-2 = rgb("#6c630b")
-#let accent-color = rgb("#cc3516")
-#let background-color = rgb("#faf2e0")
+#let edge-color = text-color
+#let node-color = rgb("#e2c093")
+#let bookmark-color = rgb("#7a8295")
+#let description-color = rgb("#6c630b")
+#let working-color = rgb("#cc3516")
+#let repository-background-color = rgb("#faf2e0")
+#let repository-border-color = rgb("f8e8c8")
 #let highlight-color = rgb("#f4d960")
-#let outer-border-color = rgb("f8e8c8")
-
-// Color aliases
-#let node-color = primary-color
-#let arrow-color = text-color
-#let working-color = accent-color // color of @
-#let bookmark-color = secondary-color-1
-#let description-color = secondary-color-2
-#let operation-color = text-color
-#let repository-color = background-color
 
 // Positions are specified as a (row, col) pair:
 //
@@ -44,42 +35,35 @@
 
 // Sizes
 #let node-radius = 0.3
-#let arrow-tail-gap = 0.075
-#let arrow-head-gap = 0.075
+#let command-spacing = -0.4em
 
-// Settings
-#set text(font: "IBM Plex Mono")
-#set text(weight: "bold")
-#set text(fill: text-color)
-#set text(size: 9.5pt)
-
-// Mention a bookmark name in text
-#let text-bookmark(bookmark-name) = text(fill: bookmark-color, bookmark-name)
-
-// Mention a description in text
-#let text-description(description) = text(fill: description-color)["#description"]
-
-// Freeform text, for describing operations that don't lend themselves to pictures.
-#let text-freeform(freeform) = text(style: "italic", weight: "regular", font: "IBM Plex Sans", freeform)
-
-// Text mentioning the state of the filesystem at a change.
-#let text-files(label) = {
-  text(font: "IBM Plex Mono", weight: "bold", style: "normal")[_#[Files#label]_]
-}
-
-// Highlight a piece of text
-#let text-highlight(stuff) = highlight(
-  fill: highlight-color,
-  top-edge: 1.5em,
-  bottom-edge: -0.75em,
-  extent: 0.25em,
-  radius: 1.25em,
-  stuff
+// Two primary fonts
+#let font-mono(some-text) = text(
+  font: "IBM Plex Mono",
+  size: 9.5pt,
+  weight: "bold",
+  fill: text-color,
+  some-text
 )
+#let font-sans(some-text) = text(
+  font: "IBM Plex Sans",
+  size: 9.5pt,
+  weight: "regular",
+  fill: text-color,
+  some-text
+)
+
+// Text styles
+#let text-command(command) = font-mono(command)
+#let text-bookmark(bookmark-name) = font-mono(text(fill: bookmark-color, bookmark-name))
+#let text-description(description) = font-mono(text(fill: description-color)["#description"])
+#let text-files(label) = font-mono(text(style: "normal")[_#[Files#label]_])
+#let text-explanation(explanation) = font-sans(text(style: "italic", explanation))
 #let text-highlight(stuff) = [#stuff#h(0.2em)#super(box(circle(
   radius: 0.5em,
   fill: highlight-color,
 )))]
+#let text-attribution(attr) = font-mono(text(weight: "regular", attr))
 
 // Draw a box around a repo state
 #let repository(contents) = align(left, {
@@ -90,7 +74,6 @@
     ),
     radius: 0.5em,
     inset: 0.75em,
-    //fill: repository-color,
     contents
   )
 })
@@ -114,33 +97,33 @@
     stroke: none,
     fill: node-color,
   )
-  content((rel: (0, 0.03), to: change-id), change-id)
+  content((rel: (0, 0.03), to: change-id), font-mono(change-id))
 
   if working {
     content(
       (rel: (-(node-radius + 0.15), 0), to: change-id),
-      text(fill: working-color, "@")
+      font-mono(text(fill: working-color, "@"))
     )
   }
 
   let rhs = ()
   if bookmark != none {
-    rhs.push(text(fill: bookmark-color)[#h(0.25em)---#h(0.25em)#bookmark])
+    rhs.push(text-bookmark[#h(0.25em)---#h(0.25em)#bookmark])
   }
   if highlighted-bookmark != none {
-    rhs.push(text(fill: bookmark-color)[#h(0.25em)---#h(0.25em)#text-highlight(highlighted-bookmark)])
+    rhs.push(text-bookmark[#h(0.25em)---#h(0.25em)#text-highlight(highlighted-bookmark)])
   }
   if description != none {
-    rhs.push(text(fill: description-color)[#h(0.25em) "#description"])
+    rhs.push[#h(0.25em)#text-description(description)]
   }
   if highlighted-description != none {
-    rhs.push(text(fill: description-color)[#h(0.25em) #text-highlight["#highlighted-description"]])
+    rhs.push[#h(0.25em)#text-highlight(text-description(highlighted-description))]
   }
   if files != none {
-    rhs.push[#h(0.5em)_#[Files#files]_]
+    rhs.push[#h(0.25em)#text-files(files)]
   }
   if highlighted-files != none {
-    rhs.push[#h(0.5em)#text-highlight[_#[Files#highlighted-files]_]]
+    rhs.push[#h(0.3em)#text-highlight(text-files(highlighted-files))]
   }
 
   if rhs.len() > 0 {
@@ -165,111 +148,86 @@
 // Draw an ellipsis
 #let ellipsis(row-and-col) = {
   let (x, y) = pos(row-and-col)
-  content((x, y + 0.19), "...")
+  content((x, y + 0.21), font-mono(text(size: 12pt, weight: "regular")[...]))
 }
 
 // Draw an edge.
 #let edge(from-change-id, to-change-id) = {
   draw.line(
-    (from-change-id, node-radius + arrow-tail-gap, to-change-id),
-    (to-change-id, node-radius + arrow-head-gap, from-change-id),
+    (from-change-id, node-radius + 0.075, to-change-id),
+    (to-change-id, node-radius + 0.075, from-change-id),
     // Options: "triangle", "stealth", "straight", "barbed"
     mark: (
       length: 0.1,
-      width: 0.15,
-      end: "straight"
+      width: 0.08,
+      fill: edge-color,
+      end: "triangle",
     ),
+    //mark: (
+    //  length: 0.1,
+    //  width: 0.15,
+    //  end: "straight"
+    //),
     stroke: (
-      paint: arrow-color,
+      paint: edge-color,
       thickness: 0.13em,
     ),
-    //fill: arrow-color,
   )
 }
 
-#let operation(label) = {
-  content(
-    (0.5, -0.75),
-    anchor: "west",
-    {
-      set par(leading: 0.5em)
-      label
-    }
-  )
-}
-
-#let operation-arrow = {
-  draw.line(
-    (0, 0),
-    (0.55, 0),
-    // Options: "triangle", "stealth", "straight", "barbed"
-    mark: (
-      end: "triangle",
-      length: 0.1,
-      width: 0.1,
-    ),
-    stroke: (
-      paint: operation-color,
-      thickness: 0.4em,
-    ),
-    fill: operation-color,
-  )
-}
-
-#let op-wrapper(stuff) = block(breakable: false, rect(
-  //stroke: none,
+#let command-wrapper(stuff) = block(breakable: false, rect(
   radius: 0.5em,
   inset: 0.75em,
   stroke: (
-    paint: outer-border-color,
+    paint: repository-border-color,
     thickness: 0.15em,
   ),
-  fill: repository-color,
+  fill: repository-background-color,
   align(center, stuff)
 ))
-#let op-spacing = -0.4em
 
-#let read-op(op, repo) = op-wrapper({
-  canvas(operation(op))
-  v(op-spacing)
+#let read-command(cmd, repo, explanation) = command-wrapper({
+  text-command(cmd)
+  v(command-spacing)
   repository(canvas(repo))
+  text-explanation(explanation)
 })
 
-#let freeform-read-op(op, repo, what-it-does) = op-wrapper({
-  canvas(operation(op))
-  v(op-spacing)
-  repository(canvas(repo))
-  v(op-spacing)
-  text-freeform(what-it-does)
-})
-
-#let write-op(before, op, after) = op-wrapper({
-  canvas(operation(op))
-  v(op-spacing)
+#let write-command(repo-before, cmd, repo-after) = command-wrapper({
+  text-command(cmd)
+  v(command-spacing)
   grid(
     columns: (auto, 2em, auto),
-    repository(canvas(before)),
-    align(horizon+left, canvas(operation-arrow)),
-    repository(canvas(after))
+    repository(canvas(repo-before)),
+    align(horizon + center,
+      move(dy: -0.2em,
+        text(
+          size: 20pt,
+          weight: "regular",
+          math.angle.r
+        )
+      )
+    ),
+    repository(canvas(repo-after))
   )
 })
 
-#let freeform-op(op, what-it-does) = op-wrapper({
-    canvas(operation(op))
-    v(op-spacing)
-    text-freeform(what-it-does)
+#let freeform-command(cmd, explanation) = command-wrapper({
+    text-command(cmd)
+    v(command-spacing)
+    text-explanation(explanation)
 })
 
 // ~~~~
 // Info
 // ~~~~
 
-#let jj-status = freeform-op(
+#let jj-status = freeform-command(
   [jj status],
-  [Shows current&parent \ change and file \ modifications.],
+  [Shows current&parent \ change, and file \ modifications.],
 )
 
-#let jj-log = freeform-op(
+#let jj-log = freeform-command(
   [jj log -r ..],
   [Shows all changes \ in the repo.],
 )
@@ -278,25 +236,25 @@
 // Bookmarks
 // ~~~~~~~~~
 
-#let jj-bookmark-create = write-op(
+#let jj-bookmark-create = write-command(
   change("r", (0, 0), working: true),
   [jj bookmark create #text-bookmark("feat/ui")],
   change("r", (0, 0), working: true, bookmark: "feat/ui")
 )
 
-#let jj-bookmark-rename = write-op(
+#let jj-bookmark-rename = write-command(
   change("r", (0, 0), bookmark: "feat/ui"),
   [jj bookmark rename #text-bookmark("feat/ui") #text-bookmark("feat/ux")],
   change("r", (0, 0), bookmark: "feat/ux")
 )
 
-#let jj-bookmark-delete = write-op(
+#let jj-bookmark-delete = write-command(
   change("r", (0, 0), bookmark: "feat/ui"),
   [jj bookmark delete #text-bookmark("feat/ui")],
   change("r", (0, 0))
 )
 
-#let jj-bookmark-move = write-op(
+#let jj-bookmark-move = write-command(
   {
     change("r", (0, 0), working: true)
     ellipsis((0.5, 0))
@@ -310,7 +268,7 @@
   }
 )
 
-#let jj-bookmark-list = freeform-read-op(
+#let jj-bookmark-list = read-command(
   [jj bookmark list],
   {
     change("r", (0, 0), highlighted-bookmark: "feat/ui")
@@ -324,13 +282,13 @@
 // Descriptions
 // ~~~~~~~~~~~~
 
-#let jj-show = freeform-read-op(
+#let jj-show = read-command(
   [jj show],
   change("r", (0, 0), working: true, highlighted-description: "edit foo"),
   [#text-highlight[] Prints this change's description.]
 )
 
-#let jj-describe = write-op(
+#let jj-describe = write-command(
   change("r", (0, 0), working: true, description: "edti foo"),
   [jj describe -m #text-description("edit foo")],
   change("r", (0, 0), working: true, description: "edit foo")
@@ -340,7 +298,7 @@
 // Graph
 // ~~~~~
 
-#let jj-edit = write-op(
+#let jj-edit = write-command(
   {
     change("r", (0, 0), working: true)
     ellipsis((0.57, 0))
@@ -354,20 +312,20 @@
   }
 )
 
-#let jj-new = write-op(
+#let jj-new = write-command(
   {
     blank((0, 0))
-    change("q", (1, 0), working: true, bookmark: "bmark", description: "edit foo")
+    change("q", (1, 0), working: true, bookmark: "feat/ui", description: "edit foo")
   },
   [jj new],
   {
     change("r", (0, 0), working: true)
-    change("q", (1, 0), bookmark: "bmark", description: "edit foo")
+    change("q", (1, 0), bookmark: "feat/ui", description: "edit foo")
     edge("r", "q")
   }
 )
 
-#let jj-merge = write-op(
+#let jj-merge = write-command(
   {
     blank((0, 0))
     blank((1.14, 0))
@@ -385,7 +343,7 @@
   }
 )
 
-#let jj-abandon = write-op(
+#let jj-abandon = write-command(
   {
     blank((2.14, 0))
     change("r", (0, 0), files: 3)
@@ -407,7 +365,7 @@
 // Files
 // ~~~~~
 
-#let jj-diff = freeform-read-op(
+#let jj-diff = read-command(
   [jj diff (paths..)],
   {
     change("r", (0, 0), working: true, highlighted-files: 2)
@@ -417,7 +375,7 @@
   [#text-highlight[] Prints the diff between \ #text-files(1) and #text-files(2).]
 )
 
-#let jj-restore = write-op(
+#let jj-restore = write-command(
   {
     change("r", (0, 0), working: true, files: 2)
     ellipsis((0.5, 0))
@@ -431,7 +389,7 @@
   }
 )
 
-#let jj-squash = write-op(
+#let jj-squash = write-command(
   {
     change("r", (0, 0), working: true, files: 2)
     change("q", (1, 0), files: 1)
@@ -445,7 +403,7 @@
   }
 )
 
-#let jj-backout = write-op(
+#let jj-backout = write-command(
   {
     blank((0, 0))
     blank((2.14, 0))
@@ -467,7 +425,7 @@
 // Miscellaneous
 // ~~~~~~~~~~~~~
 
-#let jj-undo = freeform-op(
+#let jj-undo = freeform-command(
   [jj undo],
   [Undoes the \ last command.],
 )
@@ -476,7 +434,7 @@
 // Cheat Sheet
 // ~~~~~~~~~~~
 
-#align(center)[= JJ Cheat Sheet]
+#align(center)[#text(font: "IBM Plex Sans")[= JJ Cheat Sheet]]
 #v(1em)
 
 #let row(..args) = {
@@ -491,13 +449,13 @@
 )
 #row(
   jj-status,
-  jj-show,
   jj-describe,
+  jj-show,
 )
 #row(
-  jj-bookmark-list,
   jj-bookmark-create,
   jj-bookmark-move,
+  jj-bookmark-list,
 )
 #row(
   jj-bookmark-rename,
@@ -505,9 +463,9 @@
   jj-log,
 )
 #row(
-  jj-diff,
   jj-restore,
   jj-squash,
+  jj-diff,
 )
 #row(
   jj-backout,
@@ -515,8 +473,4 @@
   jj-undo,
 )
 
-#place(bottom + right)[
-  #set text(weight: "regular")
-  #set align(center)
-  justinpombrio.net \ & lark.gay
-]
+#place(bottom + right, text-attribution[justinpombrio.net \ & lark.gay])
