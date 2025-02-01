@@ -59,10 +59,11 @@
 #let text-description(description) = font-mono(text(fill: description-color)["#description"])
 #let text-files(label) = font-mono(text(style: "normal")[_#[Files#label]_])
 #let text-explanation(explanation) = font-sans(text(style: "italic", explanation))
-#let text-highlight(stuff) = [#stuff#h(0.2em)#super(box(circle(
-  radius: 0.5em,
-  fill: highlight-color,
-)))]
+#let text-highlight(stuff) = stuff
+// #let text-highlight(stuff) = [#stuff#h(0.2em)#super(box(circle(
+//   radius: 0.5em,
+//   fill: highlight-color,
+// )))]
 #let text-attribution(attr) = font-mono(text(weight: "regular", attr))
 
 // Draw a box around a repo state
