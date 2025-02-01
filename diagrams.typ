@@ -258,13 +258,11 @@
 #let jj-bookmark-move = write-command(
   {
     change("r", (0, 0), working: true)
-    ellipsis((0.5, 0))
     change("q", (1, 0), bookmark: "feat/ui")
   },
   [jj bookmark move #text-bookmark("feat/ui")],
   {
     change("r", (0, 0), working: true, bookmark: "feat/ui")
-    ellipsis((0.5, 0))
     change("q", (1, 0))
   }
 )
@@ -273,7 +271,6 @@
   [jj bookmark list],
   {
     change("r", (0, 0), highlighted-bookmark: "feat/ui")
-    ellipsis((0.5, 0))
     change("q", (1, 0), highlighted-bookmark: "feat/api")
   },
   [#text-highlight[] Prints all bookmarks.]
@@ -302,13 +299,11 @@
 #let jj-edit = write-command(
   {
     change("r", (0, 0), working: true)
-    ellipsis((0.57, 0))
     change("q", (1.14, 0))
   },
   [jj edit q],
   {
     change("r", (0, 0))
-    ellipsis((0.57, 0))
     change("q", (1.14, 0), working: true)
   }
 )
@@ -379,13 +374,11 @@
 #let jj-restore = write-command(
   {
     change("r", (0, 0), working: true, files: 2)
-    ellipsis((0.5, 0))
     change("q", (1, 0), files: 1)
   },
   [jj restore \-\-from q (paths..)],
   {
     change("r", (0, 0), working: true, files: 1)
-    ellipsis((0.5, 0))
     change("q", (1, 0), files: 1)
   }
 )
