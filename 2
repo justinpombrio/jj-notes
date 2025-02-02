@@ -60,16 +60,16 @@
 #let text-description(description) = font-mono(text(fill: description-color)["#description"])
 #let text-edit(label) = font-mono(text(style: "normal")[_#[Edit#label]_])
 #let text-files(label) = font-mono(text(style: "normal")[_#[Files#label]_])
-#let text-explanation(explanation) = font-sans(text(style: "normal", explanation))
+#let text-explanation(explanation) = font-sans(text(style: "italic", explanation))
 #let text-highlight(stuff) = stuff
 // #let text-highlight(stuff) = [#stuff#h(0.2em)#super(box(circle(
 //   radius: 0.5em,
 //   fill: highlight-color,
 // )))]
-#let text-attribution(attr) = font-mono(text(weight: "semibold", attr))
+#let text-attribution(attr) = font-mono(text(weight: "regular", attr))
 
 // Draw a box around a repo state
-#let repository(contents) = align(center, {
+#let repository(contents) = align(left, {
   rect(
     stroke: (
       paint: text-color,
@@ -242,7 +242,7 @@
 
 #let jj-status = freeform-command(
   [jj status],
-  [Shows current and \ parent change, \ and file modifications.],
+  [Shows current&parent \ change, and file \ modifications.],
 )
 
 #let jj-plain = freeform-command(
@@ -460,17 +460,17 @@
   grid(
     columns: (auto, 2em, auto),
     align: (right+horizon, center+horizon, left+horizon),
-    row-gutter: (0.4em, 0.75em, 0.75em, 0.75em, 0.75em),
+    row-gutter: 0.75em,
     ..cells
   )
 }
 #let legend = make-legend((
-  (canvas(node("r", (0, 0))), [a _change_]),
-  (working-glyph, [the working change ("_working copy revision_")]),
-  (text-description("edit foo"), [a change's description]),
-  (text-bookmark("feat/ui"), [a _bookmark_]),
-  (text-files(1), [a state of the filesystem]),
-  (text-edit(1), [a change's diff]),
+  ([#canvas(node("r", (0, 0))) #v(-1em)], "change"),
+  (working-glyph, [working change \ ("working copy revision")]),
+  (text-description("edit foo"), "a change's description"),
+  (text-edit(1), "a change's diff"),
+  (text-files(1), "state of the repo dir"),
+  (text-bookmark("feat/ui"), "bookmark"),
 ))
 
 // ~~~~~~~~~~~
