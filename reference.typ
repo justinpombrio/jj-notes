@@ -18,10 +18,9 @@
 
 
 = JJ Reference
-#v(0.5em)
 
-This is a _reference_ for the Jujutsu version control system. It exists to help you learn and
-remember the details of Jujutsu, once you have already grokked the basics.
+// This is a _reference_ for the Jujutsu version control system. It exists to help you learn and
+// remember the details of Jujutsu, once you have already grokked the basics.
 
 == Model
 
@@ -29,19 +28,18 @@ A Jujutsu repository is a DAG (directed acyclic graph) whose nodes are called _c
 has:
 
 - A state of the filesystem within the repository directory. You can imagine each change storing a
-  full copy of the directory and all the files in it, though of course `jj` is more efficient than
-  this.
+  full copy of the directory and all the files in it, though `jj` is more efficient than this.
 - File _conflicts_. Some files in a change may contain conflicts, from a variety of different
   sources. These conflicts are local to the change. (Unlike `git`, they do not block your use of
   `jj`.)
-- One or more _parent_ changes. (Though there is a root change which has no parents and always has
-  an empty directory).
+- One or more _parent_ changes. Though there is a root change which has no parents and always has
+  an empty directory.
 - A textual _description_ of the change, a.k.a. a commit message. This is always present, but
   defaults to the empty string.
 
 There is some additional information attached to the DAG:
 
-- Exactly one of the changes is the _working change_, a.k.a. `@`. The docs call this the "working
+- Exactly one of the changes is the _working change_, written `@`. The docs call this the "working
   copy revision". (This is analogous to `git`'s `HEAD`.)
 - There may be some _bookmarks_, which are unique string labels on changes. (When interfacing with
   `git`, these bookmarks act as branch names.)
@@ -58,63 +56,70 @@ predict how it responds to modifications:
   parent(s).
 - If a change has no file modifications and no description, and is not referenced by `@` or by a
   bookmark, it disappears silently into the night.
-- A change represents a diff. Moving a change tries to apply the diff to its new parent, but this
+- A change represents a diff. Moving a change tries to apply the diff to its new parent. This
   may cause merge conflicts.
 - Many commands act on `@` by default. Almost all of them can take a `-r/--revision` argument to act
-  on a different change. (Of the commands in the Cheat Sheet that show `@`, all can be applied to a
-  different change using `-r` except for `jj bookmark move` and `jj restore`, which take `--from`
-  and `--to` arguments instead.)
+  on a different change.
+  // (Of the commands in the Cheat Sheet that show `@`, all can be applied to a
+  // different change using `-r` except for `jj bookmark move` and `jj restore`, which take `--from`
+  // and `--to` arguments instead.)
 
 === File Conflicts
 
 If the working change (`@`) has a _file conflict_, resolving it is as simple as editing the file so
-as to no longer have conflict markers (`<<<<<<<`, `>>>>>>>`, etc.) in it. Or for a binary file,
+as to no longer have conflict markers (`<<<<<<<`, `=======`, etc.) in it. For a binary file,
 replace the file with the version you want. `jj restore` may be useful for this purpose. (Unlike
 `git`, file conflicts don't block you.)
 
 === jj git push
 
-`jj git push` copies changes from the local repo into the remote repo. If a change is present both
-locally and remotely, the remote change is updated to match the local change. (Though typically
-the two changes will be identical.)
-TODO: Test this!
+`jj git push` copies changes from the local repo into the remote repo. If a local change has been
+modified since it was last pushed, it becomes a brand new change in the remote repo (just like
+force pushing in `git` replaces old commits with new commits). To prevent you from accidentally
+doing this to `main`, `jj git push` makes all pushed changes in the primary branch immutable. You
+can still edit them if you want, but you have to pass the `--ignore-immutable` flag.
 
-All local bookmarks are similarly copied to the remote repo. However, if a bookmark is present
+All local bookmarks are similarly copied to the remote repo. If a bookmark is present
 both locally and remotely, `jj` checks if its (locally recorded) _last seen position_ matches its
-current position in the remote repo. If so, its position is updated in the remote repo. If not,
-this command fails and tells you to `jj git fetch` first (because it means that someone else
+current position in the remote repo. If so, the bookmark's position in the remote repo is updated.
+If not, this command fails and tells you to `jj git fetch` first (because it means that someone else
 updated the bookmark since you last pushed it).
 
 === jj git fetch
 
-`jj git fetch` copies changes from the remote repo into the local repo. If a change is present
-both locally and remotely, the local change is updated to match the remote change. (Though
-typically the two changes will be identical.)
-TODO: Test this!
+`jj git fetch` copies changes from the remote repo into the local repo. If a change has been
+modified in the remote repo, it turns into a new change locally. Though most of the time you're just
+fetching fresh new changes.
 
-Similarly, all remote bookmarks are copied into the local repo. If a bookmark is present both
-locally and remotely _at different changes_, `jj git fetch` creates a second copy of that
-bookmark. This is called a _bookmark conflict_ because it violates the invariant that bookmark names
-are unique. (This is analogous to the situation where `git pull` produces a merge conflict.) It is
-then up to you how to resolve this "bookmark conflict":
+Local bookmarks are advanced to match the change that they're on in the remote repo. However, if the
+change a bookmark is on in the remote is not a descendant of the change it's on locally,
+`jj git fetch` creates a second copy of that bookmark.
+This is called a _bookmark conflict_ because it violates the invariant that bookmark names
+are unique. (This is analogous to `git pull` producing a merge conflict.) It is
+up to you how to resolve this "bookmark conflict". Some of the options available to you:
 
 - If you want to merge the two changes, say `jj new CHANGE-ID-1 CHANGE-ID-2`, resolve any file
-  conflicts, then update the bookmark with `jj bookmark set BOOKMARK-NAME`. (You can get the
-  change ids by running `jj bookmark list BOOKMARK-NAME`.)
+  conflicts, then update the bookmark with `jj bookmark move BOOKMARK-NAME`.
+  (You can get the change ids by running `jj bookmark list BOOKMARK-NAME`.)
 - If you want to discard one of the two changes and just use the other one, say
-  `jj bookmark set CHANGE-ID` for the change you want to keep.
+  `jj bookmark move BOOKMARK-NAME -r CHANGE-ID` for the change you want to keep.
 - If you want to rebase one of the changes to come _after_ the other, say
-  `jj rebase -b SECOND-CHANGE-ID -d FIRST-CHANGE-ID`, then `jj bookmark set BOOKMARK-NAME`.
-  (This will rebase not only the second change itself, but all changes after it forked away from the
-  first change.)
+  `jj rebase -b CHANGE-ID-2 -d CHANGE-ID-1`, then
+  `jj bookmark move BOOKMARK-NAME -r CHANGE-ID-2`.
+  This will rebase not only the second change itself, but all changes after it forked away from the
+  first change.
 
 == Commands
 
 === Global Setup Commands
 
-- `jj config set --user name MY_EMAIL`. Set your name for signing commits.
-- `jj config set --user email MY_EMAIL`. Set your email address for signing commits.
-- `jj config edit --user`. Manually edit the configuration file.
+```
+jj config set --user user.name  MY_NAME
+jj config set --user user.email MY_EMAIL
+jj config set --user ui.editor  MY_EDITOR
+
+jj config edit --user  // Manually edit config file
+```
 
 Instead of `--user`, you can pass `--repo` to change the repository specific config, which takes
 priority.
@@ -127,7 +132,7 @@ priority.
 === Editing your Local Repo
 
 The attached JJ Cheat Sheet visually describes the most common/fundamental commands for editing a
-`jj` repo. Keep it on your desk while learning `jj`!
+`jj` repo.
 
 There are also a couple of "alias" commands that are best thought of as combinations of other `jj`
 commands:
@@ -135,20 +140,6 @@ commands:
 - `jj commit`. Shorthand for `jj describe; jj new`.
 - `jj bookmark set BOOKMARK`. Either `create` or `move` the bookmark, whichever is valid.
 
-// 
-// TODO:
-// 
-// - Terminology: commit or change?
-// - For `jj log`, mention `jj log -r ..`. Shows all commits.
-// - Figure out what to say (if anything) about this:
-//   https://jj-vcs.github.io/jj/latest/FAQ/#how-do-i-resume-working-on-an-existing-change
-// - Note that changes are mutable, and that they can become immutable if part of the main branch.
-// - Reference workflows: Klabnik's and also https://kubamartin.com/posts/introduction-to-the-jujutsu-vcs/
-// ## Revisions
-// 
-// - `@`: TODO
-// - `x-`: TODO
-// 
 // ## Commands
 // 
 // - `jj abandon REVISION`: REVISION defaults to `@`. Delete the change (delete that node in the

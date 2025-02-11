@@ -466,8 +466,8 @@
 }
 #let legend = make-legend((
   (canvas(node("r", (0, 0))), [a _change_]),
-  (working-glyph, [the working change ("_working copy revision_")]),
-  (text-description("edit foo"), [a change's description]),
+  (working-glyph, [the _working change_ ("working copy revision")]),
+  (text-description("edit foo"), [a change's _description_]),
   (text-bookmark("feat/ui"), [a _bookmark_]),
   (text-files(1), [a state of the filesystem]),
   (text-edit(1), [a change's diff]),
