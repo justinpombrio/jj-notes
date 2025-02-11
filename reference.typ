@@ -179,12 +179,6 @@ commands:
 // - `jj rebase`. TODO.
 // - `jj resolve!!`. TODO.
 // 
-// ## Alias Commands
-// 
-// - `jj commit`. Identical to `jj describe; jj new`.
-// - `jj bookmark set BOOKMARK -r REVISION`. Either `create` or `move` the bookmark, whichever is
-//   valid. `REVISION` defaults to `@`.
-// 
 // ## Advanced Commands
 // 
 // - `jj bookmark forget BOOKMARK`. Deletes the bookmark label named BOOKMARK, but "forgets" that it

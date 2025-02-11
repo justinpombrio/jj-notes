@@ -180,11 +180,6 @@
       fill: edge-color,
       end: "triangle",
     ),
-    //mark: (
-    //  length: 0.1,
-    //  width: 0.15,
-    //  end: "straight"
-    //),
     stroke: (
       paint: edge-color,
       thickness: 0.13em,
