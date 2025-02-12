@@ -169,11 +169,12 @@
 }
 
 // Draw an edge.
-#let edge(from-change-id, to-change-id) = {
+#let edge(from-change-id, to-change-id, edit: none) = {
   draw.line(
     (from-change-id, node-radius + 0.075, to-change-id),
     (to-change-id, node-radius + 0.075, from-change-id),
     // Options: "triangle", "stealth", "straight", "barbed"
+    name: "edge",
     mark: (
       length: 0.1,
       width: 0.08,
@@ -185,6 +186,13 @@
       thickness: 0.13em,
     ),
   )
+  if edit != none {
+    content(
+      (name: "edge", anchor: "mid"),
+      anchor: "west",
+      [#h(0.5em)#text-edit(edit)]
+    )
+  }
 }
 
 #let command-wrapper(stuff) = block(breakable: false, rect(
@@ -359,18 +367,18 @@
 #let jj-abandon = write-command(
   {
     blank((2.14, 0))
-    change("r", (0, 0), edit: 3)
-    change("q", (1, 0), edit: 2)
-    change("p", (2, 0), edit: 1)
-    edge("r", "q")
-    edge("q", "p")
+    change("r", (0, 0))
+    change("q", (1, 0))
+    change("p", (2, 0))
+    edge("r", "q", edit: 2)
+    edge("q", "p", edit: 1)
   },
   [jj abandon q],
   {
     blank((2.14, 0))
-    change("r", (0, 0), edit: 3)
-    change("p", (2, 0), edit: 1)
-    edge("r", "p")
+    change("r", (0, 0))
+    change("p", (2, 0))
+    edge("r", "p", edit: 2)
   }
 )
 
@@ -465,7 +473,7 @@
   (text-description("edit foo"), [a change's _description_]),
   (text-bookmark("feat/ui"), [a _bookmark_]),
   (text-files(1), [a state of the filesystem]),
-  (text-edit(1), [a change's diff]),
+  (text-edit(1), [a diff between two changes]),
 ))
 
 // ~~~~~~~~~~~
